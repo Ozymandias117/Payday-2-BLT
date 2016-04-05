@@ -8,7 +8,7 @@ void Logging::Log(std::string msg, LogType mType){
 
 	std::time_t currentTime = time(0);
 	std::tm now;
-	localtime_s(&now, &currentTime);
+	localtime_r(&currentTime, &now);
 
 	char datestring[100];
 	std::strftime(datestring, sizeof(datestring), "%Y_%m_%d", &now);

@@ -1,9 +1,9 @@
 #include <zlib.h>
 #include "util.h"
-
+#include <iostream>
 
 ByteStream::ByteStream(std::string path){
-	mainStream = std::ifstream(path.c_str(), std::ifstream::binary);
+    mainStream.open( path.c_str(), std::ios::binary );
 }
 
 ByteStream::~ByteStream(){
