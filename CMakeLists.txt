@@ -22,6 +22,6 @@ set(SOURCE_FILES
     src/InitiateState.cpp
     )
 
-add_library(libblt_hook SHARED ${SOURCE_FILES})
+add_library(blt_hook SHARED ${SOURCE_FILES})
 
-target_link_libraries(libblt_hook subhook dl ssl curl z)
+target_link_libraries(blt_hook subhook dl ssl curl z)

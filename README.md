@@ -49,7 +49,7 @@ $ make
 #### Usage
 To use Payday2 BLT you must apply the following steps.
 * Copy libblt_hook.so to ```steamapps/common/PAYDAY 2```
-* Add to your Payday 2 launch options ```LD_PRELOAD=libblt_hook %command%```
+* Add to your Payday 2 launch options ```LD_PRELOAD=libblt_hook.so %command%```
 
 ## Documentation
 All documentation can be found via the navigation bar the Payday Mods site, or just [go to it directly](http://payday-2-blt-docs.readthedocs.org/en/latest/). It's also available on [GitHub](https://github.com/JamesWilko/Payday-2-BLT-Docs) (or click the 'Edit on GitHub' button) so that you can contribute stuff if you need to, or need us to fix something.  
