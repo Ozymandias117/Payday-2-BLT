@@ -1,11 +1,10 @@
 #include "util/util.h"
-
 #include <ctime>
 #include <fstream>
 #include <iostream>
 
-void Logging::Log(std::string msg, LogType mType){
-
+void Logging::Log(std::string msg, LogType mType)
+{
 	std::time_t currentTime = time(0);
 	std::tm now;
 	localtime_r(&currentTime, &now);
@@ -17,13 +16,14 @@ void Logging::Log(std::string msg, LogType mType){
 	std::string fPath = "mods/logs/" + std::string(datestring) + "_log.txt";
 	std::ofstream mFile;
 	mFile.open(fPath.c_str(), std::ios::out | std::ios::app);
-	
+
 	std::strftime(datestring, sizeof(datestring), "%I:%M:%S %p", &now);
 
 	mFile << datestring;
 	mFile << " ";
 
-	switch (mType){
+	switch (mType)
+	{
 	case LOGGING_LOG:
 		mFile << "Log: ";
 		break;
@@ -44,6 +44,6 @@ void Logging::Log(std::string msg, LogType mType){
 	mFile << msg.c_str();
 	mFile << "\n";
 	mFile.close();
-	printf(msg.c_str());
+	printf("%s", msg.c_str());
 	printf("\n");
 }
