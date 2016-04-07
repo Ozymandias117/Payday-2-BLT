@@ -29,11 +29,9 @@ void SignatureSearch::Search(){
     if( NULL != dlHandle )
     {
         for (it = allSignatures->begin(); it < allSignatures->end(); it++) {
-            printf( "%p %p\n", it->address, *(void**)it->address );
             *((void**)it->address) = FindPattern(it->signature, dlHandle);
-            printf( "%s: %p\n", it->signature, it->address );
         }
         dlclose( dlHandle );
+        printf("Signatures Found.\n");
     }
-	printf("Signatures Found.\n");
 }

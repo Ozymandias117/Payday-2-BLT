@@ -48,7 +48,7 @@ CREATE_CALLABLE_SIGNATURE(luaL_ref, int, "luaL_ref", "", 0, lua_State*, int);
 CREATE_CALLABLE_SIGNATURE(lua_rawgeti, void, "lua_rawgeti", "", 0, lua_State*, int, int);
 CREATE_CALLABLE_SIGNATURE(luaL_unref, void, "luaL_unref", "", 0, lua_State*, int, int);
 CREATE_CALLABLE_CLASS_SIGNATURE(do_game_update, void*, "_ZN3dsl12EventManager6updateEv", "", 0, int*, int*)
-CREATE_CALLABLE_CLASS_SIGNATURE(luaL_newstate, int, "luaL_newstate", "", 0, char, char, int)
+CREATE_CALLABLE_CLASS_SIGNATURE(luaL_newstate, int, "_ZN3dsl12LuaInterface8newstateEbbNS0_10AllocationE", "", 0, char, char, int)
 
 SubHook* gameUpdateDetour;
 SubHook* newStateDetour;
@@ -302,7 +302,7 @@ int luaF_print(lua_State* L){
 int updates = 0;
 std::thread::id main_thread_id;
 
-void* do_game_update_new(void* thislol, int edx, int* a, int* b){
+void* do_game_update_new(void* thislol, int* a, int* b){
 
     SubHook::ScopedRemove hookLock( (SubHook*)gameUpdateDetour );
 	// If someone has a better way of doing this, I'd like to know about it.
@@ -327,19 +327,19 @@ void* do_game_update_new(void* thislol, int edx, int* a, int* b){
 // Random dude who wrote what's his face?
 // I 'unno, I stole this method from the guy who wrote the 'underground-light-lua-hook'
 // Mine worked fine, but this seems more elegant.
-//int luaL_newstate_new(void* thislol, int edx, char no, char freakin, int clue){
-lua_State* lua_newstate_new( lua_Alloc f, void* ud){
+int luaL_newstate_new(void* thislol, char no, char freakin, int clue){
     SubHook::ScopedRemove hookLock( (SubHook*)newStateDetour );
 
-	lua_State* L = lua_newstate_orig( f, ud);
+    int ret = luaL_newstate_orig(thislol, no, freakin, clue);
 
-	if (!L) return NULL;
+	lua_State* L = (lua_State*)*((void**)thislol);
+
+	if (!L) return ret;
 
 	add_active_state(L);
 
 	int stack_size = lua_gettop_orig(L);
 
-    printf( "Createing functions\n" );
 	CREATE_LUA_FUNCTION(luaF_pcall, "pcall")
 	CREATE_LUA_FUNCTION(luaF_dofile, "dofile")
 	CREATE_LUA_FUNCTION(luaF_dohttpreq, "dohttpreq")
@@ -355,23 +355,21 @@ lua_State* lua_newstate_new( lua_Alloc f, void* ud){
 	int result;
 	Logging::Log("Initiating Hook");
 	
-    printf( "Loading base.lua\n" );
 	result = luaL_loadfile_orig(L, "mods/base/base.lua");
 	if (result == LUA_ERRSYNTAX){
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
-		return L;
+		return ret;
 	}
 	result = lua_pcall_orig(L, 0, 1, 0);
 	if (result == LUA_ERRRUN){
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
-		return L;
+		return ret;
 	}
 
-    printf( "Setting opt\n" );
 	lua_settop_orig(L, stack_size);
-	return L;
+	return ret;
 }
 
 void luaF_close(lua_State* L){
@@ -390,24 +388,18 @@ void InitiateStates(){
 
 	SignatureSearch::Search();
 
-    printf( "Hooking %p\n", do_game_update_orig );
     gameUpdateDetour = new SubHook((void*)do_game_update_orig, (void*)do_game_update_new);
     gameUpdateDetour->Install();
 
-    printf( "Hooking %p\n", lua_newstate_orig );
-    newStateDetour = new SubHook((void*)lua_newstate_orig, (void*)lua_newstate_new);
+    newStateDetour = new SubHook((void*)luaL_newstate_orig, (void*)luaL_newstate_new);
     newStateDetour->Install();
 
-    printf( "Hooking %p\n", lua_call_orig );
     luaCallDetour = new SubHook((void*)lua_call_orig, (void*)lua_newcall);
     luaCallDetour->Install();
 
-    printf( "Hooking %p\n", lua_close_orig );
     luaCloseDetour = new SubHook((void*)lua_close_orig, (void*)luaF_close);
     luaCloseDetour->Install();
 
-    Logging::Log( "Finished installing hooks", Logging::LOGGING_LOG );
-	
 	new EventQueueM();
 }
 
