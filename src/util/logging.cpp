@@ -6,18 +6,17 @@
 void Logging::Log(std::string msg, LogType mType)
 {
 	std::time_t currentTime = time(0);
-	std::tm now;
-	localtime_r(&currentTime, &now);
+	struct std::tm now = *localtime(&currentTime);
 
 	char datestring[100];
-	std::strftime(datestring, sizeof(datestring), "%Y_%m_%d", &now);
+	std::strftime(datestring, sizeof(datestring), "%F", &now);
 
 
 	std::string fPath = "mods/logs/" + std::string(datestring) + "_log.txt";
 	std::ofstream mFile;
 	mFile.open(fPath.c_str(), std::ios::out | std::ios::app);
 
-	std::strftime(datestring, sizeof(datestring), "%I:%M:%S %p", &now);
+	std::strftime(datestring, sizeof(datestring), "%X", &now);
 
 	mFile << datestring;
 	mFile << " ";
@@ -44,6 +43,5 @@ void Logging::Log(std::string msg, LogType mType)
 	mFile << msg.c_str();
 	mFile << "\n";
 	mFile.close();
-	printf("%s", msg.c_str());
-	printf("\n");
+	printf("%s\n", msg.c_str());
 }

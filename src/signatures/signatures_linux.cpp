@@ -1,4 +1,4 @@
-#include "util.h"
+#include "util/util.h"
 #include <iostream>
 #include <dlfcn.h>
 #include "signatures.h"
@@ -23,7 +23,7 @@ SignatureSearch::SignatureSearch(void* adress, const char* signature, const char
 
 void SignatureSearch::Search()
 {
-	printf("Scanning for signatures.\n");
+  Logging::Log("Scanning for signatures");
 	std::vector<SignatureF>::iterator it;
   void* dlHandle = dlopen( NULL, RTLD_LAZY );
   if( NULL != dlHandle )
@@ -33,6 +33,6 @@ void SignatureSearch::Search()
       *((void**)it->address) = FindPattern(it->signature, dlHandle);
     }
     dlclose( dlHandle );
-    printf("Signatures Found.\n");
+    Logging::Log("Signatures Found");
   }
 }

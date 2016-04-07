@@ -1,5 +1,5 @@
 // Linux implementation
-#include "util.h"
+#include "util/util.h"
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -75,7 +75,10 @@ namespace Util
 
 	bool RemoveEmptyDirectory(std::string dir)
 	{
-		return remove( dir.c_str() );
+		if (remove(dir.c_str()) != -1)
+			return true;
+
+		return false;
 	}
 
 	bool CreateDirectoryPath(std::string path)

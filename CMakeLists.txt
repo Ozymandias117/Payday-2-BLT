@@ -7,7 +7,7 @@ add_definitions(-D_GNU_SOURCE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11 -fpermissive")
 
-include_directories(src src/util src/subhook)
+include_directories(src)
 
 set(SOURCE_FILES
     src/linux_preload.cpp
