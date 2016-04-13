@@ -1,9 +1,7 @@
-//WINDOWS ONLY FILE!
-//Some other stuff might be aswell, but this is rather desperately windows only.
-
+// Windows implementation
 #include "util/util.h"
 #include <Windows.h>
-#include <tchar.h> 
+#include <tchar.h>
 #include <stdio.h>
 #include <strsafe.h>
 
@@ -36,7 +34,7 @@ namespace Util{
 		}
 		do{
 			bool isDir = ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-			
+
 			if ((dirs && isDir) || (!dirs && !isDir)){
 				files.push_back(ffd.cFileName);
 			}
@@ -58,7 +56,7 @@ namespace Util{
 		str.reserve(t.tellg());
 		t.seekg(0, std::ios::beg);
 		str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-		
+
 		return str;
 	}
 

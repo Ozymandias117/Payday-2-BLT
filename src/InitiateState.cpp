@@ -1,5 +1,5 @@
 #include "InitState.h"
-#include "./subhook/subhook.h"
+#include "subhook/subhook.h"
 
 #include "signatures/signatures.h"
 #include "util/util.h"
@@ -56,7 +56,6 @@ SubHook* luaCallDetour;
 SubHook* luaCloseDetour;
 
 // lua c-functions
-
 #define LUA_REGISTRYINDEX	(-10000)
 #define LUA_GLOBALSINDEX	(-10002)
 
@@ -66,47 +65,55 @@ SubHook* luaCloseDetour;
 #define LUA_ERRSYNTAX	3
 #define LUA_ERRMEM	4
 #define LUA_ERRERR	5
-#define LUA_ERRFILE     (LUA_ERRERR+1)
+#define LUA_ERRFILE (LUA_ERRERR+1)
 
 std::list<lua_State*> activeStates;
-void add_active_state(lua_State* L){
+void add_active_state(lua_State* L)
+{
 	activeStates.push_back(L);
 }
 
-void remove_active_state(lua_State* L){
+void remove_active_state(lua_State* L)
+{
 	activeStates.remove(L);
 }
 
-bool check_active_state(lua_State* L){
+bool check_active_state(lua_State* L)
+{
 	std::list<lua_State*>::iterator it;
-	for (it = activeStates.begin(); it != activeStates.end(); it++){
-		if (*it == L) {
+	for (it = activeStates.begin(); it != activeStates.end(); it++)
+	{
+		if (*it == L)
 			return true;
-		}
 	}
 	return false;
 }
 
-void lua_newcall(lua_State* L, int args, int returns){
-    SubHook::ScopedRemove hookLock( (SubHook*)luaCallDetour );
+void lua_newcall(lua_State* L, int args, int returns)
+{
+  SubHook::ScopedRemove hookLock( (SubHook*)luaCallDetour );
 
 	int result = lua_pcall_orig(L, args, returns, 0);
-	if (result != 0) {
+	if (result != 0)
+	{
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
 	}
 }
 
-int luaH_getcontents(lua_State* L, bool files){
+int luaH_getcontents(lua_State* L, bool files)
+{
 	size_t len;
 	const char* dirc = lua_tolstring_orig(L, 1, &len);
 	std::string dir(dirc, len);
 	std::vector<std::string> directories;
 
-	try {
+	try
+	{
 		directories = Util::GetDirectoryContents(dir, files);
 	}
-	catch (int e){
+	catch (int e)
+	{
 		lua_pushboolean_orig(L, false);
 		return 1;
 	}
@@ -115,7 +122,8 @@ int luaH_getcontents(lua_State* L, bool files){
 
 	std::vector<std::string>::iterator it;
 	int index = 1;
-	for (it = directories.begin(); it < directories.end(); it++){
+	for (it = directories.begin(); it < directories.end(); it++)
+	{
 		if (*it == "." || *it == "..") continue;
 		lua_pushinteger_orig(L, index);
 		lua_pushlstring_orig(L, it->c_str(), it->length());
@@ -126,15 +134,18 @@ int luaH_getcontents(lua_State* L, bool files){
 	return 1;
 }
 
-int luaF_getdir(lua_State* L){
+int luaF_getdir(lua_State* L)
+{
 	return luaH_getcontents(L, true);
 }
 
-int luaF_getfiles(lua_State* L){
+int luaF_getfiles(lua_State* L)
+{
 	return luaH_getcontents(L, false);
 }
 
-int luaF_directoryExists(lua_State* L){
+int luaF_directoryExists(lua_State* L)
+{
 	size_t len;
 	const char* dirc = lua_tolstring_orig(L, 1, &len);
 	bool doesExist = Util::DirectoryExists(dirc);
@@ -142,7 +153,8 @@ int luaF_directoryExists(lua_State* L){
 	return 1;
 }
 
-int luaF_unzipfile(lua_State* L){
+int luaF_unzipfile(lua_State* L)
+{
 	size_t len;
 	const char* archivePath = lua_tolstring_orig(L, 1, &len);
 	const char* extractPath = lua_tolstring_orig(L, 2, &len);
@@ -153,7 +165,8 @@ int luaF_unzipfile(lua_State* L){
 	return 0;
 }
 
-int luaF_removeDirectory(lua_State* L){
+int luaF_removeDirectory(lua_State* L)
+{
 	size_t len;
 	const char* directory = lua_tolstring_orig(L, 1, &len);
 	bool success = Util::RemoveEmptyDirectory(directory);
@@ -161,11 +174,13 @@ int luaF_removeDirectory(lua_State* L){
 	return 1;
 }
 
-int luaF_pcall(lua_State* L){
+int luaF_pcall(lua_State* L)
+{
 	int args = lua_gettop_orig(L);
 
 	int result = lua_pcall_orig(L, args - 1, -1, 0);
-	if (result == LUA_ERRRUN){
+	if (result == LUA_ERRRUN)
+	{
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
 		return 0;
@@ -178,18 +193,20 @@ int luaF_pcall(lua_State* L){
 	return lua_gettop_orig(L);
 }
 
-int luaF_dofile(lua_State* L){
-
+int luaF_dofile(lua_State* L)
+{
 	size_t length = 0;
 	const char* filename = lua_tolstring_orig(L, 1, &length);
 	int error = luaL_loadfile_orig(L, filename);
-	if (error == LUA_ERRSYNTAX){
+	if (error == LUA_ERRSYNTAX)
+	{
 		size_t len;
 		Logging::Log(filename, Logging::LOGGING_ERROR);
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
 	}
 	error = lua_pcall_orig(L, 0, 0, 0);
-	if (error == LUA_ERRRUN){
+	if (error == LUA_ERRRUN)
+	{
 		size_t len;
 		Logging::Log(filename, Logging::LOGGING_ERROR);
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
@@ -204,10 +221,12 @@ struct lua_http_data {
 	lua_State* L;
 };
 
-void return_lua_http(void* data, std::string& urlcontents){
+void return_lua_http(void* data, std::string& urlcontents)
+{
 	lua_http_data* ourData = (lua_http_data*)data;
 
-	if (!check_active_state(ourData->L)) {
+	if (!check_active_state(ourData->L))
+	{
 		delete ourData;
 		return;
 	}
@@ -221,14 +240,16 @@ void return_lua_http(void* data, std::string& urlcontents){
 	delete ourData;
 }
 
-void progress_lua_http_orig(void* data, long progress, long total){
+void progress_lua_http_orig(void* data, long progress, long total)
+{
 	lua_http_data* ourData = (lua_http_data*)data;
 
-	if (!check_active_state(ourData->L)){
+	if (!check_active_state(ourData->L))
 		return;
-	}
 
-	if (ourData->progressRef == 0) return;
+	if (ourData->progressRef == 0)
+		return;
+
 	lua_rawgeti_orig(ourData->L, LUA_REGISTRYINDEX, ourData->progressRef);
 	lua_pushinteger_orig(ourData->L, ourData->requestIdentifier);
 	lua_pushinteger_orig(ourData->L, progress);
@@ -238,14 +259,14 @@ void progress_lua_http_orig(void* data, long progress, long total){
 
 static int HTTPReqIdent = 0;
 
-int luaF_dohttpreq(lua_State* L){
+int luaF_dohttpreq(lua_State* L)
+{
 	Logging::Log("Incoming HTTP Request/Request");
 
 	int args = lua_gettop_orig(L);
 	int progressReference = 0;
-	if (args >= 3){
+	if (args >= 3)
 		progressReference = luaL_ref_orig(L, LUA_REGISTRYINDEX);
-	}
 
 	int functionReference = luaL_ref_orig(L, LUA_REGISTRYINDEX);
 	size_t len;
@@ -268,9 +289,8 @@ int luaF_dohttpreq(lua_State* L){
 	reqItem->data = ourData;
 	reqItem->url = url;
 
-	if (progressReference != 0){
+	if (progressReference != 0)
 		reqItem->progress = progress_lua_http_orig;
-	}
 
 	HTTPManager::GetSingleton()->LaunchHTTPRequest(reqItem);
 	lua_pushinteger_orig(L, HTTPReqIdent);
@@ -278,21 +298,27 @@ int luaF_dohttpreq(lua_State* L){
 }
 
 CConsole* gbl_mConsole = NULL;
+int luaF_createconsole(lua_State* L)
+{
+	if (gbl_mConsole)
+		return 0;
 
-int luaF_createconsole(lua_State* L){
-	if (gbl_mConsole) return 0;
 	gbl_mConsole = new CConsole();
 	return 0;
 }
 
-int luaF_destroyconsole(lua_State* L){
-	if (!gbl_mConsole) return 0;
+int luaF_destroyconsole(lua_State* L)
+{
+	if (!gbl_mConsole)
+		return 0;
+
 	delete gbl_mConsole;
 	gbl_mConsole = NULL;
 	return 0;
 }
 
-int luaF_print(lua_State* L){
+int luaF_print(lua_State* L)
+{
 	size_t len;
 	const char* str = lua_tolstring_orig(L, 1, &len);
 	Logging::Log(str, Logging::LOGGING_LUA);
@@ -302,23 +328,20 @@ int luaF_print(lua_State* L){
 int updates = 0;
 std::thread::id main_thread_id;
 
-void* do_game_update_new(void* thislol, int* a, int* b){
-
-    SubHook::ScopedRemove hookLock( (SubHook*)gameUpdateDetour );
+void* do_game_update_new(void* thislol, int* a, int* b)
+{
+  SubHook::ScopedRemove hookLock( (SubHook*)gameUpdateDetour );
 	// If someone has a better way of doing this, I'd like to know about it.
 	// I could save the this pointer?
 	// I'll check if it's even different at all later.
-	if (std::this_thread::get_id() != main_thread_id){
+	if (std::this_thread::get_id() != main_thread_id)
 		return do_game_update_orig(thislol, a, b);
-	}
 
-	if (updates == 0){
+	if (updates == 0)
 		HTTPManager::GetSingleton()->init_locks();
-	}
 
-	if (updates > 1){
+	if (updates > 1)
 		EventQueueM::GetSingleton()->ProcessEvents();
-	}
 
 	updates++;
 	return do_game_update_orig(thislol, a, b);
@@ -327,14 +350,16 @@ void* do_game_update_new(void* thislol, int* a, int* b){
 // Random dude who wrote what's his face?
 // I 'unno, I stole this method from the guy who wrote the 'underground-light-lua-hook'
 // Mine worked fine, but this seems more elegant.
-int luaL_newstate_new(void* thislol, char no, char freakin, int clue){
-    SubHook::ScopedRemove hookLock( (SubHook*)newStateDetour );
+int luaL_newstate_new(void* thislol, char no, char freakin, int clue)
+{
+  SubHook::ScopedRemove hookLock( (SubHook*)newStateDetour );
 
-    int ret = luaL_newstate_orig(thislol, no, freakin, clue);
+  int ret = luaL_newstate_orig(thislol, no, freakin, clue);
 
 	lua_State* L = (lua_State*)*((void**)thislol);
 
-	if (!L) return ret;
+	if (!L)
+		return ret;
 
 	add_active_state(L);
 
@@ -354,15 +379,18 @@ int luaL_newstate_new(void* thislol, char no, char freakin, int clue){
 
 	int result;
 	Logging::Log("Initiating Hook");
-	
+
 	result = luaL_loadfile_orig(L, "mods/base/base.lua");
-	if (result == LUA_ERRSYNTAX){
+	if (result == LUA_ERRSYNTAX)
+	{
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
 		return ret;
 	}
+
 	result = lua_pcall_orig(L, 0, 1, 0);
-	if (result == LUA_ERRRUN){
+	if (result == LUA_ERRRUN)
+	{
 		size_t len;
 		Logging::Log(lua_tolstring_orig(L, -1, &len), Logging::LOGGING_ERROR);
 		return ret;
@@ -372,40 +400,42 @@ int luaL_newstate_new(void* thislol, char no, char freakin, int clue){
 	return ret;
 }
 
-void luaF_close(lua_State* L){
-    SubHook::ScopedRemove hookLock( (SubHook*)luaCloseDetour );
+void luaF_close(lua_State* L)
+{
+  SubHook::ScopedRemove hookLock( (SubHook*)luaCloseDetour );
 
 	remove_active_state(L);
 	lua_close_orig(L);
 }
 
-
 static HTTPManager mainManager;
 
-void InitiateStates(){
+void InitiateStates()
+{
 
 	main_thread_id = std::this_thread::get_id();
 
 	SignatureSearch::Search();
 
-    gameUpdateDetour = new SubHook((void*)do_game_update_orig, (void*)do_game_update_new);
-    gameUpdateDetour->Install();
+  gameUpdateDetour = new SubHook((void*)do_game_update_orig, (void*)do_game_update_new);
+  gameUpdateDetour->Install();
 
-    newStateDetour = new SubHook((void*)luaL_newstate_orig, (void*)luaL_newstate_new);
-    newStateDetour->Install();
+  newStateDetour = new SubHook((void*)luaL_newstate_orig, (void*)luaL_newstate_new);
+  newStateDetour->Install();
 
-    luaCallDetour = new SubHook((void*)lua_call_orig, (void*)lua_newcall);
-    luaCallDetour->Install();
+  luaCallDetour = new SubHook((void*)lua_call_orig, (void*)lua_newcall);
+  luaCallDetour->Install();
 
-    luaCloseDetour = new SubHook((void*)lua_close_orig, (void*)luaF_close);
-    luaCloseDetour->Install();
+  luaCloseDetour = new SubHook((void*)lua_close_orig, (void*)luaF_close);
+  luaCloseDetour->Install();
 
 	new EventQueueM();
 }
 
-void DestroyStates(){
-    delete gameUpdateDetour;
-    delete newStateDetour;
-    delete luaCallDetour;
-    delete luaCloseDetour;
+void DestroyStates()
+{
+  delete gameUpdateDetour;
+  delete newStateDetour;
+  delete luaCallDetour;
+  delete luaCloseDetour;
 }
